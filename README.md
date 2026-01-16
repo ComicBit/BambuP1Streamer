@@ -103,3 +103,30 @@ This error on the containers output seems to occur when the PRINTER_ACCESS_CODE 
 
 ### Harmless errors on http://localhost:1984/stream.html?src=p1s
 Sometimes a few error messages appear before the stream starts. One would just wait a few more seconds.
+
+# Home Assistant / Polling Endpoint
+
+The binary exposes a lightweight HTTP endpoint on port `8080` by default for monitoring stream status.
+
+### Available Endpoints
+
+- **Stream status:** `GET /stream_started`  
+  Returns JSON `{"started": true}` when the internal stream is active, otherwise `{"started": false}`.
+
+- **Health check:** `GET /health`  
+  Returns `{"ok": true}`.
+
+### Usage Example
+
+Home Assistant can poll the stream status endpoint to detect when the Bambu stream has started and trigger automations:
+
+```bash
+curl http://<host>:8081/stream_started
+```
+
+When running in a container, expose port 8080:
+```bash
+podman run -d --name bambu_p1_streamer -p 1984:1984 -p 8080:8080 \
+  -e PRINTER_ADDRESS=192.168.12.34 -e PRINTER_ACCESS_CODE=12345678 \
+  bambu_p1_streamer
+```

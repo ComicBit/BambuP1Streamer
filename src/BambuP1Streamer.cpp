@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 #include "BambuTunnel.h"
+#include "HttpServer.h"
+#include <atomic>
+#include <thread>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <cstdlib>
@@ -50,7 +53,7 @@ void bambu_log(void *ctx, int level, tchar const * msg)
     }
 }
 
-int start_bambu_stream(char *camera_url)
+int start_bambu_stream(char *camera_url, std::atomic<bool>* stream_started)
 {
     Bambu_Tunnel tunnel = NULL;
     int is_bambu_open = 0;
@@ -100,13 +103,17 @@ int start_bambu_stream(char *camera_url)
             break;
         }
 
+        // notify HTTP server that stream has started
+        if (stream_started)
+            stream_started->store(true);
+
         int result = 0;
         while (true) 
         {
             Bambu_Sample sample;
             result = lib.Bambu_ReadSample(tunnel, &sample);
 
-            if (result == Bambu_success) 
+                if (result == Bambu_success) 
             {
                 fwrite(sample.buffer, 1, sample.size, stdout);
                 fflush(stdout);
@@ -146,6 +153,9 @@ int start_bambu_stream(char *camera_url)
         lib.Bambu_Destroy(tunnel);
         tunnel = NULL;
     }
+
+    if (stream_started)
+        stream_started->store(false);
 
     return ret;
 }
@@ -193,7 +203,16 @@ int main(int argc, char* argv[]){
     GET_FUNC(Bambu_GetDuration);
     GET_FUNC(Bambu_GetStreamInfo);
 
-	start_bambu_stream(camera_url);
+    std::atomic<bool> streamStarted(false);
+
+    // start HTTP server on port 8080 to allow Home Assistant polling
+    HttpServer server(8081, &streamStarted);
+    server.start();
+
+    start_bambu_stream(camera_url, &streamStarted);
+
+    // stop HTTP server before exit
+    server.stop();
 
 	return 0;
 }
