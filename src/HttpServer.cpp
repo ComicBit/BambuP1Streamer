@@ -78,6 +78,8 @@ void HttpServer::run() {
         return;
     }
 
+    std::cerr << "HTTP server listening on port " << port_ << std::endl;
+
     while (running_) {
         struct sockaddr_in client_addr;
         socklen_t client_len = sizeof(client_addr);

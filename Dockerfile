@@ -1,16 +1,18 @@
-FROM docker.io/gcc:12 as build
+FROM docker.io/gcc:12 AS build
 
 RUN mkdir -p /build/src
 RUN mkdir -p /build/out
 COPY src/BambuP1Streamer.cpp /build/src/
 COPY src/BambuTunnel.h /build/src/
+COPY src/HttpServer.h /build/src/
+COPY src/HttpServer.cpp /build/src/
 
 RUN mkdir -p /build/deps
 WORKDIR /build/deps
 RUN curl -LOJ https://public-cdn.bambulab.com/upgrade/studio/plugins/01.04.00.15/linux_01.04.00.15.zip
 RUN unzip linux_01.04.00.15.zip
 
-RUN gcc /build/src/BambuP1Streamer.cpp -o /build/out/BambuP1Streamer
+RUN g++ -std=c++11 -pthread /build/src/BambuP1Streamer.cpp /build/src/HttpServer.cpp -o /build/out/BambuP1Streamer
 
 #ENV PRINTER_ADDRESS
 #ENV PRINTER_ACCESS_CODE

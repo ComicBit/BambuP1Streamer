@@ -104,6 +104,7 @@ int start_bambu_stream(char *camera_url, std::atomic<bool>* stream_started)
         }
 
         // notify HTTP server that stream has started
+        fprintf(stderr, "Stream started successfully - setting flag to true\n");
         if (stream_started)
             stream_started->store(true);
 
@@ -154,6 +155,7 @@ int start_bambu_stream(char *camera_url, std::atomic<bool>* stream_started)
         tunnel = NULL;
     }
 
+    fprintf(stderr, "Stream ended - setting flag to false\n");
     if (stream_started)
         stream_started->store(false);
 
@@ -206,8 +208,10 @@ int main(int argc, char* argv[]){
     std::atomic<bool> streamStarted(false);
 
     // start HTTP server on port 8080 to allow Home Assistant polling
+    fprintf(stderr, "Starting HTTP server on port 8081...\n");
     HttpServer server(8081, &streamStarted);
     server.start();
+    fprintf(stderr, "HTTP server started. Endpoints available at http://localhost:8081/stream_started and /health\n");
 
     start_bambu_stream(camera_url, &streamStarted);
 
