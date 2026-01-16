@@ -6,13 +6,15 @@ COPY src/BambuP1Streamer.cpp /build/src/
 COPY src/BambuTunnel.h /build/src/
 COPY src/HttpServer.h /build/src/
 COPY src/HttpServer.cpp /build/src/
+COPY src/StatusServer.cpp /build/src/
 
 RUN mkdir -p /build/deps
 WORKDIR /build/deps
 RUN curl -LOJ https://public-cdn.bambulab.com/upgrade/studio/plugins/01.04.00.15/linux_01.04.00.15.zip
 RUN unzip linux_01.04.00.15.zip
 
-RUN g++ -std=c++11 -pthread /build/src/BambuP1Streamer.cpp /build/src/HttpServer.cpp -o /build/out/BambuP1Streamer
+RUN g++ -std=c++11 -pthread /build/src/BambuP1Streamer.cpp -o /build/out/BambuP1Streamer
+RUN g++ -std=c++11 -pthread /build/src/StatusServer.cpp -o /build/out/StatusServer
 
 #ENV PRINTER_ADDRESS
 #ENV PRINTER_ACCESS_CODE
@@ -25,10 +27,12 @@ RUN apt update && apt install -y \
 
 RUN mkdir -p /app
 
-COPY --from=build /build/out/BambuP1Streamer /build/deps/libBambuSource.so /app/
+COPY --from=build /build/out/BambuP1Streamer /build/out/StatusServer /build/deps/libBambuSource.so /app/
 COPY entrypoint.sh /app/
 
 RUN echo \
+'streams:\n'\
+'   p1s: "exec:./BambuP1Streamer ./libBambuSource.so ${PRINTER_ADDRESS} ${PRINTER_ACCESS_CODE}"\n'\
 'log:\n'\
 '  level: debug\n'\
 'api:\n'\

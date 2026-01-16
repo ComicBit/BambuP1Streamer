@@ -5,24 +5,30 @@ echo "=========================================="
 echo "Starting Bambu P1 Streamer Container"
 echo "=========================================="
 echo "Printer Address: ${PRINTER_ADDRESS}"
-echo "HTTP Port: ${HTTP_PORT:-8081}"
+echo "HTTP Status Port: ${HTTP_PORT:-8081}"
 echo "=========================================="
 
-# Start BambuP1Streamer in the background with HTTP server
-echo "Starting BambuP1Streamer with HTTP server..."
-./BambuP1Streamer ./libBambuSource.so "${PRINTER_ADDRESS}" "${PRINTER_ACCESS_CODE}" "${HTTP_PORT:-8081}" 2>&1 &
-BAMBU_PID=$!
+# Clear any old status file
+rm -f /tmp/bambu_stream_status
 
-# Give it a moment to start and output initial logs
-sleep 2
+# Start StatusServer in the background
+echo "Starting HTTP Status Server on port ${HTTP_PORT:-8081}..."
+./StatusServer "${HTTP_PORT:-8081}" 2>&1 &
+STATUS_PID=$!
 
-# Check if BambuP1Streamer is still running
-if ! kill -0 $BAMBU_PID 2>/dev/null; then
-    echo "ERROR: BambuP1Streamer failed to start or exited immediately"
+# Give it a moment to start
+sleep 1
+
+# Check if StatusServer is still running
+if ! kill -0 $STATUS_PID 2>/dev/null; then
+    echo "ERROR: StatusServer failed to start"
     exit 1
 fi
 
-echo "BambuP1Streamer started successfully (PID: $BAMBU_PID)"
+echo "StatusServer started successfully (PID: $STATUS_PID)"
+echo "=========================================="
+echo "Note: BambuP1Streamer will start automatically"
+echo "when go2rtc receives a stream request."
 echo "=========================================="
 
 # Start go2rtc in the foreground (this keeps the container running)

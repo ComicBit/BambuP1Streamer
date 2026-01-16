@@ -125,12 +125,20 @@ Sometimes a few error messages appear before the stream starts. One would just w
 
 # Home Assistant / Polling Endpoint
 
-The binary exposes a lightweight HTTP endpoint (port `8081` by default, configurable via `HTTP_PORT` env var) for monitoring stream status. **The HTTP server starts immediately when the container starts**, providing real-time status of the Bambu stream.
+A lightweight HTTP status server runs on port `8081` (configurable via `HTTP_PORT` env var) to monitor stream status. **The status server starts immediately, but reports `"started": true` only when a client is actively streaming.**
+
+### How It Works
+
+- The status server starts immediately when the container launches
+- `BambuP1Streamer` only starts when go2rtc receives a stream request (when someone views the stream)
+- While streaming, BambuP1Streamer updates a heartbeat file every second
+- The status server checks this heartbeat file (stream is active if updated within last 5 seconds)
+- When the stream stops, the status returns to `false`
 
 ### Available Endpoints
 
 - **Stream status:** `GET /stream_started`  
-  Returns JSON `{"started": true}` when the internal stream is active, otherwise `{"started": false}`.
+  Returns JSON `{"started": true}` when a client is actively viewing the stream, otherwise `{"started": false}`.
 
 - **Health check:** `GET /health`  
   Returns `{"ok": true}`.
@@ -144,45 +152,45 @@ HTTP_PORT=8081
 
 ### Container Logs
 
-When the container starts, you will see detailed logging:
+When the container starts:
 ```
 ==========================================
 Starting Bambu P1 Streamer Container
 ==========================================
 Printer Address: 192.168.1.100
-HTTP Port: 8081
+HTTP Status Port: 8081
 ==========================================
-Starting BambuP1Streamer with HTTP server...
-Starting Bambu Camera Tunnel
-  libBambuSource.so path: ./libBambuSource.so
-  printAddress: 192.168.1.100
-  accessCode: ********
-
-===========================================
-Starting HTTP server on port 8081...
-===========================================
-[HttpServer] Starting server thread...
-[HttpServer] Server thread launched
-HTTP server initialization complete.
-Endpoints available at:
-  - http://localhost:8081/stream_started
-  - http://localhost:8081/health
-===========================================
-[HttpServer] run() thread started
-[HttpServer] Socket created successfully (fd=3)
-[HttpServer] Attempting to bind to port 8081...
-[HttpServer] Bind successful
-[HttpServer] Starting to listen...
-[HttpServer] *** HTTP SERVER READY AND LISTENING ON PORT 8081 ***
-[HttpServer] Waiting for connections...
-BambuP1Streamer started successfully (PID: 7)
+Starting HTTP Status Server on port 8081...
+========================================
+[StatusServer] HTTP Status Server Started
+[StatusServer] Listening on port 8081
+[StatusServer] Endpoints:
+[StatusServer]   - GET /stream_started
+[StatusServer]   - GET /health
+========================================
+StatusServer started successfully (PID: 7)
+==========================================
+Note: BambuP1Streamer will start automatically
+when go2rtc receives a stream request.
 ==========================================
 Starting go2rtc...
 ```
 
+When someone starts viewing the stream:
+```
+Starting Session
+Stream started successfully
+```
+
+When requests are made:
+```
+[StatusServer] GET /stream_started -> {"started":true}
+[StatusServer] GET /stream_started -> {"started":false}
+```
+
 ### Usage Example
 
-Home Assistant can poll the stream status endpoint to detect when the Bambu stream has started and trigger automations:
+Home Assistant can poll the stream status endpoint to detect when someone is actively viewing the Bambu stream:
 
 ```bash
 curl http://<host>:8081/stream_started
