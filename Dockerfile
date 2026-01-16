@@ -29,7 +29,7 @@ COPY --from=build /build/out/BambuP1Streamer /build/deps/libBambuSource.so /app/
 
 RUN echo \
 'streams:\n'\
-'   p1s: "exec:./BambuP1Streamer ./libBambuSource.so ${PRINTER_ADDRESS} ${PRINTER_ACCESS_CODE}"\n'\
+'   p1s: "exec:./BambuP1Streamer ./libBambuSource.so ${PRINTER_ADDRESS} ${PRINTER_ACCESS_CODE} ${HTTP_PORT:-8081}"\n'\
 'log:\n'\
 '  level: debug\n'\
 'api:\n'\

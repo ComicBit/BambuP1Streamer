@@ -13,4 +13,5 @@ services:
     environment:
       - PRINTER_ADDRESS=${PRINTER_ADDRESS}
       - PRINTER_ACCESS_CODE=${PRINTER_ACCESS_CODE}
+      - HTTP_PORT=${HTTP_PORT:-8081}
     restart: unless-stopped

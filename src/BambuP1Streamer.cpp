@@ -164,14 +164,23 @@ int start_bambu_stream(char *camera_url, std::atomic<bool>* stream_started)
 
 int main(int argc, char* argv[]){
 
-	if ( argc != 4 ){
-		printf("Usage: %s <libBambuSource.so path> <printer address> <access code>", argv[0]);
+	if ( argc != 4 && argc != 5 ){
+		printf("Usage: %s <libBambuSource.so path> <printer address> <access code> [http_port]\n", argv[0]);
 		exit(1);
 	}
 
 	char* bambuLibPath = argv[1];
 	char* printerAddress = argv[2];
 	char* accessCode = argv[3];
+	int httpPort = 8081; // default
+	
+	if (argc == 5) {
+		httpPort = atoi(argv[4]);
+		if (httpPort <= 0 || httpPort > 65535) {
+			fprintf(stderr, "Invalid port: %s, using default 8081\n", argv[4]);
+			httpPort = 8081;
+		}
+	}
 
 	fprintf(stderr, "Starting Bambu Camera Tunnel\n");
 	fprintf(stderr, "  libBambuSource.so path: %s\n", bambuLibPath);
@@ -207,11 +216,24 @@ int main(int argc, char* argv[]){
 
     std::atomic<bool> streamStarted(false);
 
-    // start HTTP server on port 8080 to allow Home Assistant polling
-    fprintf(stderr, "Starting HTTP server on port 8081...\n");
-    HttpServer server(8081, &streamStarted);
+    // start HTTP server to allow Home Assistant polling
+    fprintf(stderr, "===========================================\n");
+    fprintf(stderr, "Starting HTTP server on port %d...\n", httpPort);
+    fprintf(stderr, "===========================================\n");
+    fflush(stderr);
+    
+    HttpServer server(httpPort, &streamStarted);
     server.start();
-    fprintf(stderr, "HTTP server started. Endpoints available at http://localhost:8081/stream_started and /health\n");
+    
+    // Give the server thread a moment to start
+    usleep(100000); // 100ms
+    
+    fprintf(stderr, "HTTP server initialization complete.\n");
+    fprintf(stderr, "Endpoints available at:\n");
+    fprintf(stderr, "  - http://localhost:%d/stream_started\n", httpPort);
+    fprintf(stderr, "  - http://localhost:%d/health\n", httpPort);
+    fprintf(stderr, "===========================================\n");
+    fflush(stderr);
 
     start_bambu_stream(camera_url, &streamStarted);
 

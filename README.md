@@ -125,7 +125,7 @@ Sometimes a few error messages appear before the stream starts. One would just w
 
 # Home Assistant / Polling Endpoint
 
-The binary exposes a lightweight HTTP endpoint on port `8080` by default for monitoring stream status.
+The binary exposes a lightweight HTTP endpoint (port `8081` by default, configurable via `HTTP_PORT` env var) for monitoring stream status.
 
 ### Available Endpoints
 
@@ -134,6 +134,13 @@ The binary exposes a lightweight HTTP endpoint on port `8080` by default for mon
 
 - **Health check:** `GET /health`  
   Returns `{"ok": true}`.
+
+### Configuration
+
+Set the HTTP server port in your `.env` file:
+```bash
+HTTP_PORT=8081
+```
 
 ### Usage Example
 
