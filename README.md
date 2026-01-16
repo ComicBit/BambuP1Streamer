@@ -125,7 +125,7 @@ Sometimes a few error messages appear before the stream starts. One would just w
 
 # Home Assistant / Polling Endpoint
 
-The binary exposes a lightweight HTTP endpoint (port `8081` by default, configurable via `HTTP_PORT` env var) for monitoring stream status.
+The binary exposes a lightweight HTTP endpoint (port `8081` by default, configurable via `HTTP_PORT` env var) for monitoring stream status. **The HTTP server starts immediately when the container starts**, providing real-time status of the Bambu stream.
 
 ### Available Endpoints
 
@@ -140,6 +140,44 @@ The binary exposes a lightweight HTTP endpoint (port `8081` by default, configur
 Set the HTTP server port in your `.env` file:
 ```bash
 HTTP_PORT=8081
+```
+
+### Container Logs
+
+When the container starts, you will see detailed logging:
+```
+==========================================
+Starting Bambu P1 Streamer Container
+==========================================
+Printer Address: 192.168.1.100
+HTTP Port: 8081
+==========================================
+Starting BambuP1Streamer with HTTP server...
+Starting Bambu Camera Tunnel
+  libBambuSource.so path: ./libBambuSource.so
+  printAddress: 192.168.1.100
+  accessCode: ********
+
+===========================================
+Starting HTTP server on port 8081...
+===========================================
+[HttpServer] Starting server thread...
+[HttpServer] Server thread launched
+HTTP server initialization complete.
+Endpoints available at:
+  - http://localhost:8081/stream_started
+  - http://localhost:8081/health
+===========================================
+[HttpServer] run() thread started
+[HttpServer] Socket created successfully (fd=3)
+[HttpServer] Attempting to bind to port 8081...
+[HttpServer] Bind successful
+[HttpServer] Starting to listen...
+[HttpServer] *** HTTP SERVER READY AND LISTENING ON PORT 8081 ***
+[HttpServer] Waiting for connections...
+BambuP1Streamer started successfully (PID: 7)
+==========================================
+Starting go2rtc...
 ```
 
 ### Usage Example

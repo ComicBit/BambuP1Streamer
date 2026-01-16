@@ -26,10 +26,9 @@ RUN apt update && apt install -y \
 RUN mkdir -p /app
 
 COPY --from=build /build/out/BambuP1Streamer /build/deps/libBambuSource.so /app/
+COPY entrypoint.sh /app/
 
 RUN echo \
-'streams:\n'\
-'   p1s: "exec:./BambuP1Streamer ./libBambuSource.so ${PRINTER_ADDRESS} ${PRINTER_ACCESS_CODE} ${HTTP_PORT:-8081}"\n'\
 'log:\n'\
 '  level: debug\n'\
 'api:\n'\
@@ -39,7 +38,8 @@ RUN echo \
 WORKDIR /app
 RUN curl -LOJ https://github.com/AlexxIT/go2rtc/releases/download/v1.6.2/go2rtc_linux_amd64
 RUN chmod +x go2rtc_linux_amd64
+RUN chmod +x entrypoint.sh
 
 WORKDIR /app
 
-CMD [ "./go2rtc_linux_amd64" ]
+CMD [ "./entrypoint.sh" ]
