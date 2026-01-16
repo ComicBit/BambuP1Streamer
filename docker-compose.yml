@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  bambu_p1_streamer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bambu_p1_streamer:local
+    container_name: bambu_p1_streamer
+    ports:
+      - "1984:1984"
+      - "8081:8081"
+    environment:
+      - PRINTER_ADDRESS=${PRINTER_ADDRESS}
+      - PRINTER_ACCESS_CODE=${PRINTER_ACCESS_CODE}
+    restart: unless-stopped

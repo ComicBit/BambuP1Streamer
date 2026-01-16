@@ -14,16 +14,35 @@ This section is for the TL;DR approach.
 
 ## Quickstart
 
-This is an example on how to get the stack running ASAP. In this example we use Podman (as the more secure Docker replacement), Debian / Ubuntu and Chromium.
+### Using Docker Compose (Recommended)
 
+```bash
+git clone https://github.com/slynn1324/BambuP1Streamer.git
+cd BambuP1Streamer
+# Copy and edit the environment file with your printer details
+cp .env.example .env
+# Edit .env with your PRINTER_ADDRESS and PRINTER_ACCESS_CODE
+# Then start the service
+docker compose up -d
+# View logs
+docker compose logs -f
 ```
+
+The service will be available at:
+- go2rtc web interface: http://localhost:1984
+- Stream status API: http://localhost:8081/stream_started
+
+### Using Podman
+
+```bash
 sudo apt update
 sudo apt install podman
 git clone https://github.com/slynn1324/BambuP1Streamer.git
 cd BambuP1Streamer
 podman build -t bambu_p1_streamer .
-podman run --name bambu_p1_streamer -p 1984:1984 -e PRINTER_ADDRESS=10.1.1.13 -e PRINTER_ACCESS_CODE=24952313 localhost/bambu_p1_streamer
-open http://localhost:1984
+podman run --name bambu_p1_streamer -p 1984:1984 -p 8081:8081 \
+  -e PRINTER_ADDRESS=10.1.1.13 -e PRINTER_ACCESS_CODE=24952313 \
+  localhost/bambu_p1_streamer
 ```
 
 
