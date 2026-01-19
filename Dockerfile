@@ -4,8 +4,6 @@ RUN mkdir -p /build/src
 RUN mkdir -p /build/out
 COPY src/BambuP1Streamer.cpp /build/src/
 COPY src/BambuTunnel.h /build/src/
-COPY src/HttpServer.h /build/src/
-COPY src/HttpServer.cpp /build/src/
 COPY src/StatusServer.cpp /build/src/
 
 RUN mkdir -p /build/deps
