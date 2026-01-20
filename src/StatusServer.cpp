@@ -31,7 +31,7 @@ void statusPoller() {
     // declaring the stream inactive to avoid flicker when file updates are
     // momentarily delayed or briefly inconsistent.
     const int ACTIVATE_COUNT = 1;     // how many consecutive active samples to set active
-    const int DEACTIVATE_COUNT = 4;   // how many consecutive inactive samples to set inactive
+    const int DEACTIVATE_COUNT = 20;   // how many consecutive inactive samples to set inactive
 
     int active_count = 0;
     int inactive_count = 0;
