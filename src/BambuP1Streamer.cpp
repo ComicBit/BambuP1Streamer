@@ -9,21 +9,35 @@
 #include <fstream>
 #include <ctime>
 #include <cstdio>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define BAMBUE_START_STREAM_RETRY_COUNT (40)
 
 const char* STATUS_FILE = "/tmp/bambu_stream_status";
 
 void updateStreamStatus() {
-    std::ofstream file(STATUS_FILE);
-    if (file.is_open()) {
-        file << time(nullptr) << std::endl;
-        file.close();
+    // Write atomically: write to a temp file, fsync, then rename.
+    const char* tmp = "/tmp/bambu_stream_status.tmp";
+    time_t now = time(nullptr);
+    char buf[64];
+    int len = snprintf(buf, sizeof(buf), "%lld\n", (long long)now);
+
+    int fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd < 0) {
+        return;
     }
+    ssize_t w = write(fd, buf, (size_t)len);
+    (void)w;
+    fsync(fd);
+    close(fd);
+    // atomic rename
+    rename(tmp, STATUS_FILE);
 }
 
 void clearStreamStatus() {
-    std::remove(STATUS_FILE);
+    // remove the status file if present
+    unlink(STATUS_FILE);
 }
 
 struct BambuLib lib = {0};
