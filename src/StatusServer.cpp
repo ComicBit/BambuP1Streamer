@@ -28,18 +28,30 @@ bool isStreamActive() {
 // Background poller: reads the status file periodically and updates atomics.
 void statusPoller() {
     while (true) {
-        time_t last = 0;
+        // Read the file but only update the cached timestamp if we successfully
+        // parsed a valid timestamp. This avoids transient writer races where the
+        // file might be empty/truncated for a brief moment and would otherwise
+        // clear the cached state causing flicker.
+        time_t parsed_last = 0;
         std::ifstream file(STATUS_FILE);
         if (file.is_open()) {
             std::string line;
             if (std::getline(file, line) && !line.empty()) {
                 try {
-                    last = static_cast<time_t>(std::stol(line));
+                    parsed_last = static_cast<time_t>(std::stol(line));
                 } catch (...) {
-                    last = 0;
+                    parsed_last = 0;
                 }
             }
             file.close();
+        }
+
+        // Only store parsed_last if we successfully parsed a non-zero timestamp.
+        // Otherwise keep the previously cached timestamp.
+        time_t last = g_last_timestamp.load(std::memory_order_relaxed);
+        if (parsed_last != 0) {
+            last = parsed_last;
+            g_last_timestamp.store(last, std::memory_order_relaxed);
         }
 
         time_t now = time(nullptr);
@@ -48,7 +60,6 @@ void statusPoller() {
             active = true;
         }
 
-        g_last_timestamp.store(last, std::memory_order_relaxed);
         g_stream_active.store(active, std::memory_order_relaxed);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
