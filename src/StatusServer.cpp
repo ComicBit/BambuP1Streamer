@@ -27,6 +27,15 @@ bool isStreamActive() {
 
 // Background poller: reads the status file periodically and updates atomics.
 void statusPoller() {
+    // Hysteresis/debounce parameters: require several consecutive misses before
+    // declaring the stream inactive to avoid flicker when file updates are
+    // momentarily delayed or briefly inconsistent.
+    const int ACTIVATE_COUNT = 1;     // how many consecutive active samples to set active
+    const int DEACTIVATE_COUNT = 4;   // how many consecutive inactive samples to set inactive
+
+    int active_count = 0;
+    int inactive_count = 0;
+
     while (true) {
         // Read the file but only update the cached timestamp if we successfully
         // parsed a valid timestamp. This avoids transient writer races where the
@@ -55,12 +64,27 @@ void statusPoller() {
         }
 
         time_t now = time(nullptr);
-        bool active = false;
+        bool sample_active = false;
         if (last != 0 && (now - last) < STATUS_TIMEOUT_SECONDS) {
-            active = true;
+            sample_active = true;
         }
 
-        g_stream_active.store(active, std::memory_order_relaxed);
+        if (sample_active) {
+            active_count++;
+            inactive_count = 0;
+        } else {
+            inactive_count++;
+            active_count = 0;
+        }
+
+        bool publish_active = g_stream_active.load(std::memory_order_relaxed);
+        if (!publish_active && active_count >= ACTIVATE_COUNT) {
+            publish_active = true;
+            g_stream_active.store(true, std::memory_order_relaxed);
+        } else if (publish_active && inactive_count >= DEACTIVATE_COUNT) {
+            publish_active = false;
+            g_stream_active.store(false, std::memory_order_relaxed);
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(POLL_INTERVAL_MS));
     }
